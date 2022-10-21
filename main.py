@@ -2,8 +2,11 @@ from tkinter.font import families
 from urllib.request import Request, urlopen
 from bs4 import BeautifulSoup
 from math import *
-import re
-import sys
+import os
+
+clear = lambda: os.system('cls')
+lienWikipedia = "https://fr.wikipedia.org"
+lienPageRandom = lienWikipedia + "/wiki/Sp%C3%A9cial:Page_au_hasard"
 
 # récupère le titre ainsi que les liens présents dans la page donnée en paramètre
 def getInfosPage(lien, cible = 0):
@@ -25,9 +28,10 @@ def getInfosPage(lien, cible = 0):
                     if ("/wiki/Aide" not in link['href']):
                         if ("/wiki/Projet" not in link['href']):
                             if ("/wiki/Wikip" not in link['href']):
-                                if("action=edit" not in link['href']):
-                                    if("https://www.wikidata" not in link['href']):
-                                        links.append({'libelle': link.text, 'lien': link['href']})
+                                if ("/wiki/Fichier" not in link['href']):
+                                    if("action=edit" not in link['href']):
+                                        if("https://www.wikidata" not in link['href']):
+                                            links.append({'libelle': link.text, 'lien': link['href']})
         return {'title' : title.text, 'links' : links}
     else:
         return title.text
@@ -40,7 +44,48 @@ def checkInputInteger(input):
     except ValueError:
         return False
 
-lienPageRandom = "https://fr.wikipedia.org/wiki/Sp%C3%A9cial:Page_au_hasard"
+def afficherMessage(message):
+    clear()
+    print()
+    print('\033[1m' + message + '\033[0m')
+    print()
+
+def changementDePage(page):
+    global titrePageActuelle
+    titrePageActuelle = page['title']
+    global liensPageActuelle
+    liensPageActuelle = page['links']
+    global nbLiensPageActuelle
+    nbLiensPageActuelle = len(page['links'])
+    global numTour
+    numTour +=1
+    pagination()
+    clear()
+
+def pagination():
+    # variables utiles à la pagination des liens d'une page
+    global nbPagesPagination
+    nbPagesPagination = nbLiensPageActuelle / 20
+    if nbPagesPagination < 1:
+        global paginationSuivante
+        paginationSuivante = False
+        global paginationPrecedente
+        paginationPrecedente = False
+    else:
+        paginationSuivante = True
+        paginationPrecedente = False
+    global paginationDebut
+    paginationDebut = 0
+    global paginationFin
+    paginationFin = 20
+    global pageAffichee
+    pageAffichee = 1
+    global index
+    index = paginationDebut + 1
+
+
+
+#numéro du tour actuel
 numTour = 1
 
 # récupération de la page de départ et de son titre
@@ -56,22 +101,11 @@ liensPageActuelle = pageDepart['links']
 nbLiensPageActuelle = len(pageDepart['links'])
 
 
-# variables utiles à la pagination des liens d'une page
-nbPagesPagination = nbLiensPageActuelle / 20
-if nbPagesPagination < 1:
-    paginationSuivante = False
-    paginationPrecedente = False
-else:
-    paginationSuivante = True
-    paginationPrecedente = False
-paginationDebut = 0
-paginationFin = 20
-pageAffichee = 1
-index = paginationDebut + 1
+pagination()
+clear()
 
 # tant que le joueur n'est pas sur la bonne page on joue
 while titrePageActuelle != titrePageCible:
-
     # header
     print('*'*10 + " WikiGame " + "*"*4 + " Tour " + str(numTour))
     print("Départ: " + titrePageDepart)
@@ -99,9 +133,7 @@ while titrePageActuelle != titrePageCible:
 
     if userInput == "99":
         if paginationSuivante == True:
-            print()
-            print('\033[1m' + 'Page suivante !' + '\033[0m')
-            print()
+            afficherMessage('Page suivante !')
             paginationDebut += 20
             paginationFin += 20
             paginationPrecedente = True
@@ -111,16 +143,13 @@ while titrePageActuelle != titrePageCible:
             if pageAffichee == ceil(nbPagesPagination):
                 paginationSuivante = False
         else:
-            print()
-            print('\033[1m' + "Il n'y a pas d'autre choix !" + '\033[0m')
-            print()
+            afficherMessage("Il n'y a pas d'autre choix !")
+
         index = index = paginationDebut + 1
 
     elif userInput == "98":
         if paginationPrecedente == True:
-            print()
-            print('\033[1m' + 'Page précédente !' + '\033[0m')
-            print()
+            afficherMessage('Page précédente !')
             paginationDebut = paginationDebut - 20
             paginationFin = paginationFin - 20
             paginationSuivante = True
@@ -130,27 +159,46 @@ while titrePageActuelle != titrePageCible:
             if pageAffichee == 1:
                 paginationPrecedente = False
         else:
-            print()
-            print('\033[1m' + "Vous êtes déjà sur la première page" + '\033[0m')
-            print()
+            afficherMessage("Vous êtes déjà sur la première page")
+        
         index = paginationDebut + 1
 
     elif checkInputInteger(userInput) == False:
-        print()
-        print('\033[1m' + "Il faut siasir un nombre !" + '\033[0m')
-        print()
+        afficherMessage("Il faut saisir un nombre !")
         index = paginationDebut + 1
 
     elif len(userInput) > 2:
-        print()
-        print('\033[1m' + "Entrée incorrecte" + '\033[0m')
-        print()
+        afficherMessage("Entrée incorrecte")
         index = paginationDebut + 1
 
     else:
+        result = False
+
         if len(userInput) == 1:
             userInput = "0" + userInput
+
+        # recherche de l'élément de la liste ayant le numéro entré par le joueur
         for link in liensPageActuelle[paginationDebut:paginationFin]:
             if userInput == link['numero']:
-                print("Vous avez choisi " + link["libelle"])
-    
+                print("Vous avez choisi " + link["lien"])
+                nouvellePage = getInfosPage(lienWikipedia + link["lien"])
+
+                # si la prochaine page ne contient aucun lien on reste sur la page actuelle
+                if len(nouvellePage['links']) == 0:
+                    afficherMessage('La page choisie ne contient aucun lien !')
+                    result = True
+                    index = paginationDebut + 1
+                    break
+                else:
+                    changementDePage(nouvellePage)
+                    result = True
+                    break
+        
+        # si aucune correspondance dans la liste
+        if result == False:
+            afficherMessage("Saisie incorrect !")
+            index = paginationDebut + 1
+
+# message de victoire
+phrase = "Vous avez gagné en " + str(numTour - 1)
+print( phrase + " coup" if numTour - 1 == 1 else phrase + " coups")  
