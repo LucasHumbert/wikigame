@@ -24,20 +24,15 @@ def getInfosPage(lien, cible = 0):
     
     if (cible == 0):
         links = []
+        badLinks = ["/wiki/Aide", "/wiki/Projet", "/wiki/API", "/wiki/Wikip", "/wiki/Fichier", "action=edit", "https://www.wikidata", "https://fr.wiktionary.org/", "https://www.mediawiki.org/wiki/"]
         for para in soup.find_all('p'):
             #récupérer tout les liens dans les paragraphes
             for link in para.find_all('a'):
                 if (link.text != "" and link.text[0] != "["):
-                    if ("/wiki/Aide" not in link['href']):
-                        if ("/wiki/Projet" not in link['href']):
-                            if ("/wiki/API" not in link['href']):
-                                if ("/wiki/Wikip" not in link['href']):
-                                    if ("/wiki/Fichier" not in link['href']):
-                                        if("action=edit" not in link['href']):
-                                            if("https://www.wikidata" not in link['href']):
-                                                if("https://fr.wiktionary.org/" not in link['href']):
-                                                    if("https://www.mediawiki.org/wiki/" not in link['href']):
-                                                        links.append({'libelle': link.text, 'lien': link['href']})
+                    result = any(ele in link['href'] for ele in badLinks)
+                    if result == False:
+                        links.append({'libelle': link.text, 'lien': link['href']})
+
         return {'title' : title.text, 'links' : links}
     else:
         return title.text
