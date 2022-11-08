@@ -129,9 +129,13 @@ while titrePageActuelle != titrePageCible:
 
     questions = [
         {
-            "type": "list",
+            "type": "fuzzy",
             "message": "Votre choix:",
-            "choices": options
+            "choices": options,
+            "match_exact": True,
+            "info": False,
+            "border": True,
+            "prompt": "->"
         }
     ]
     result = prompt(questions)
@@ -183,6 +187,7 @@ while titrePageActuelle != titrePageCible:
         for link in liensPageActuelle[paginationDebut:paginationFin]:
             if linkChoice == link['numero']:
                 print("Vous avez choisi " + link["lien"])
+                print("Chargement en cours ...")
                 nouvellePage = getInfosPage(lienWikipedia + link["lien"])
 
                 # si la prochaine page ne contient aucun lien on reste sur la page actuelle
