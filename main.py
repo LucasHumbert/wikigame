@@ -1,8 +1,8 @@
-from tkinter.font import families
 from urllib.request import Request, urlopen
 from bs4 import BeautifulSoup
 from math import *
 from InquirerPy import prompt
+from InquirerPy.base.control import Choice
 import os
 
 # commande permettant de clear la console
@@ -36,15 +36,6 @@ def getInfosPage(lien, cible = 0):
         return {'title' : title.text, 'links' : links}
     else:
         return title.text
-
-# vérification que l'input du joueur est bien un integer
-def checkInputInteger(input):
-    try:
-        val = int(input)
-        return True
-    except ValueError:
-        return False
-
 
 # affiche le contenu passé en paramètre en gras et avec des sauts de ligne avant et après
 def afficherMessage(message):
@@ -127,30 +118,29 @@ while titrePageActuelle != titrePageCible:
     for link in liensPageActuelle[paginationDebut:paginationFin]:
         strLinkCount = "0"+str(index) if len(str(index)) == 1 else str(index)
         link['numero'] = strLinkCount
-        options.append(str(strLinkCount) + " " + str(link['libelle']))
+        options.append(Choice(name=str(link['libelle']), value=str(strLinkCount)))
         index += 1
 
     if paginationPrecedente == True:
-        options.append('-- Page précédente --')
+        options.append(Choice(name="-- Page précédente --", value="--"))
 
     if paginationSuivante == True:
-        options.append('++ Page suivante ++')
+        options.append(Choice(name='++ Page suivante ++', value="++"))
 
     questions = [
         {
             "type": "list",
             "message": "Votre choix:",
-            "choices": options,
+            "choices": options
         }
     ]
     result = prompt(questions)
 
     linkChoice = result[0]
-
     
     # traitement de l'input
 
-    if linkChoice[:2] == "++":
+    if linkChoice == "++":
         if paginationSuivante == True:
             afficherMessage('Page suivante !')
             paginationDebut += 20
@@ -166,7 +156,7 @@ while titrePageActuelle != titrePageCible:
 
         index = index = paginationDebut + 1
 
-    elif linkChoice[:2] == "--":
+    elif linkChoice == "--":
         if paginationPrecedente == True:
             afficherMessage('Page précédente !')
             paginationDebut = paginationDebut - 20
@@ -182,45 +172,33 @@ while titrePageActuelle != titrePageCible:
         
         index = paginationDebut + 1
 
-    elif checkInputInteger(linkChoice[:2]) == False:
-        afficherMessage("Il faut saisir un nombre !")
-        index = paginationDebut + 1
-
-    elif len(linkChoice[:2]) > 2:
+    elif len(linkChoice) > 2:
         afficherMessage("Entrée incorrecte")
         index = paginationDebut + 1
 
     else:
-        questions = [{"type": "confirm", "message": "Confirm ?", "default": True}]
-        result = prompt(questions)
-        confirm = result[0]
+        result = False
 
-        if confirm == True:
-            result = False
+        # recherche de l'élément de la liste ayant le numéro entré par le joueur
+        for link in liensPageActuelle[paginationDebut:paginationFin]:
+            if linkChoice == link['numero']:
+                print("Vous avez choisi " + link["lien"])
+                nouvellePage = getInfosPage(lienWikipedia + link["lien"])
 
-            # recherche de l'élément de la liste ayant le numéro entré par le joueur
-            for link in liensPageActuelle[paginationDebut:paginationFin]:
-                if linkChoice[:2] == link['numero']:
-                    print("Vous avez choisi " + link["lien"])
-                    nouvellePage = getInfosPage(lienWikipedia + link["lien"])
-
-                    # si la prochaine page ne contient aucun lien on reste sur la page actuelle
-                    if len(nouvellePage['links']) == 0:
-                        afficherMessage('La page choisie ne contient aucun lien !')
-                        result = True
-                        index = paginationDebut + 1
-                        break
-                    else:
-                        changementDePage(nouvellePage)
-                        result = True
-                        break
-            
-            # si aucune correspondance dans la liste
-            if result == False:
-                afficherMessage("Saisie incorrect !")
-                index = paginationDebut + 1
-        else:
-            afficherMessage('Retour à la sélection')
+                # si la prochaine page ne contient aucun lien on reste sur la page actuelle
+                if len(nouvellePage['links']) == 0:
+                    afficherMessage('La page choisie ne contient aucun lien !')
+                    result = True
+                    index = paginationDebut + 1
+                    break
+                else:
+                    changementDePage(nouvellePage)
+                    result = True
+                    break
+        
+        # si aucune correspondance dans la liste
+        if result == False:
+            afficherMessage("Saisie incorrect !")
             index = paginationDebut + 1
 
 # message de victoire
