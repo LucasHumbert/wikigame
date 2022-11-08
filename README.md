@@ -15,7 +15,13 @@ A la racine du projet, lancer la commande
 ```
 python main.js
 ```
-*Python doit être installé sur votre machine*
+
+Pour lancer les anciennes versions:
+
+```
+python old-versions/main-v*.py
+```
+
 
 ## Règles du jeu
 
