@@ -4,7 +4,9 @@ from bs4 import BeautifulSoup
 from math import *
 import os
 
+# commande permettant de clear la console
 clear = lambda: os.system('cls')
+
 lienWikipedia = "https://fr.wikipedia.org"
 lienPageRandom = lienWikipedia + "/wiki/Sp%C3%A9cial:Page_au_hasard"
 
@@ -44,12 +46,16 @@ def checkInputInteger(input):
     except ValueError:
         return False
 
+
+# affiche le contenu passé en paramètre en gras et avec des sauts de ligne avant et après
 def afficherMessage(message):
     clear()
     print()
     print('\033[1m' + message + '\033[0m')
     print()
 
+
+# change l'affichage et les infos avec celles de la nouvelle page
 def changementDePage(page):
     global titrePageActuelle
     titrePageActuelle = page['title']
@@ -62,6 +68,7 @@ def changementDePage(page):
     pagination()
     clear()
 
+# redéfini les infos de pagination
 def pagination():
     # variables utiles à la pagination des liens d'une page
     global nbPagesPagination
@@ -121,17 +128,17 @@ while titrePageActuelle != titrePageCible:
         print(strLinkCount + " - " + str(link['libelle']))
 
     if paginationPrecedente == True:
-        print('98 - Page précédente')
+        print('- - Page précédente')
 
     if paginationSuivante == True:
-        print('99 - Page suivante')
+        print('+ - Page suivante')
     
     # attente du choix de l'utilisateur
     userInput = input('Votre choix: ')
     
     # traitement de l'input
 
-    if userInput == "99":
+    if userInput == "+":
         if paginationSuivante == True:
             afficherMessage('Page suivante !')
             paginationDebut += 20
@@ -147,7 +154,7 @@ while titrePageActuelle != titrePageCible:
 
         index = index = paginationDebut + 1
 
-    elif userInput == "98":
+    elif userInput == "-":
         if paginationPrecedente == True:
             afficherMessage('Page précédente !')
             paginationDebut = paginationDebut - 20
