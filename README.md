@@ -1,11 +1,11 @@
 # Wikigame
 
-##Installation
+## Installation
 
 Placer vous à la racine du projet et lancer la comande suivante pour installer les packages:
 
 ```
-pip install
+pip install bs4
 ```
 
 ## Lancer le jeu 
