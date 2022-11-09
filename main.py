@@ -5,6 +5,7 @@ from InquirerPy import prompt
 from InquirerPy.base.control import Choice
 import os
 import time
+import sys
 
 # commande permettant de clear la console
 clear = lambda: os.system('cls')
@@ -13,12 +14,24 @@ lienWikipedia = "https://fr.wikipedia.org"
 lienPageRandom = lienWikipedia + "/wiki/Sp%C3%A9cial:Page_au_hasard"
 
 # récupère le titre ainsi que les liens présents dans la page donnée en paramètre
-def getInfosPage(lien, cible = 0):
+def getInfosPage(lien, cible = 0, depart = 0):
     req = Request(
         url=lien, 
         headers={'User-Agent': 'Mozilla/5.0'}
     )
-    webpage = urlopen(req).read()
+    urlOpened = urlopen(req)
+    webpage = urlOpened.read()
+
+    lienPage = urlOpened.url
+    if depart == 1:
+        global urlPageDepart
+        urlPageDepart = lienPage
+    elif cible == 1:
+        global urlPageCible
+        urlPageCible = lienPage
+    else:
+        global urlPageActuelle
+        urlPageActuelle = lienPage
     soup = BeautifulSoup(webpage, 'html.parser')
 
     title = soup.find("h1", {"id": "firstHeading"})
@@ -29,7 +42,7 @@ def getInfosPage(lien, cible = 0):
         for para in soup.find_all('p'):
             #récupérer tout les liens dans les paragraphes
             for link in para.find_all('a'):
-                if (link.text != "" and link.text[0] != "[" and len(link['href']) > 0):
+                if (link.text != "" and link.text[0] != "[" and link['href']):
                     result = any(ele in link['href'] for ele in badLinks)
                     if result == False:
                         links.append({'libelle': link.text, 'lien': link['href']})
@@ -143,138 +156,162 @@ def revenirEnArriere():
     changementDePage(result[0])  
     historique.append({"title": result[0]['title'], 'links': result[0]['links']})  
 
+if len(sys.argv) == 1:
+    #numéro du tour actuel
+    numTour = 1
 
-#numéro du tour actuel
-numTour = 1
+    # récupération de la page de départ, de son titre et son url
+    urlPageDepart = ""
+    pageDepart = getInfosPage(lienPageRandom, 0, 1)
+    titrePageDepart = pageDepart['title']
+    while len(pageDepart['links']) == 0:
+        pageDepart = getInfosPage(lienPageRandom)
 
-# récupération de la page de départ et de son titre
-pageDepart = getInfosPage(lienPageRandom)
-titrePageDepart = pageDepart['title']
 
-# récupération de la ppage cible
-titrePageCible = getInfosPage(lienPageRandom, 1)
+    # récupération de la page cible
+    urlPageCible = ""
+    titrePageCible = getInfosPage(lienPageRandom, 1)
 
-# infos sur la page sur laquelle se trouve le joueur
-titrePageActuelle = titrePageDepart
-liensPageActuelle = pageDepart['links']
-nbLiensPageActuelle = len(pageDepart['links'])
+    # infos sur la page sur laquelle se trouve le joueur
+    titrePageActuelle = titrePageDepart
+    liensPageActuelle = pageDepart['links']
+    nbLiensPageActuelle = len(pageDepart['links'])
+    urlPageActuelle = ""
 
-# stockage de l'historique des pages utilisées
-historique = []
+    # stockage de l'historique des pages utilisées
+    historique = []
 
-pagination()
-clear()
+    pagination()
+    clear()
 
-# tant que le joueur n'est pas sur la bonne page on joue
-while titrePageActuelle != titrePageCible:
-    # header
-    print('*'*10 + " WikiGame " + "*"*4 + " Tour " + str(numTour))
-    print("Départ: " + titrePageDepart)
-    print("Cible: " + titrePageCible)
-    print("Actuellement: " + titrePageActuelle)
-    print("-"*6 + " Page " + str(pageAffichee) + "-"*6)
+    # tant que le joueur n'est pas sur la bonne page on joue
+    while urlPageActuelle != urlPageCible:
+        # header
+        print('*'*10 + " WikiGame " + "*"*4 + " Tour " + str(numTour))
+        print("Départ: " + titrePageDepart)
+        print("Cible: " + titrePageCible)
+        print("Actuellement: " + titrePageActuelle)
+        print("-"*6 + " Page " + str(pageAffichee) + "-"*6)
+        print(urlPageCible)
 
-    # options correspond aux liens hypertextes
-    options = []
+        # options correspond aux liens hypertextes
+        options = []
 
-    # ajout dans l'objet du lien son numéro dans la liste
-    for link in liensPageActuelle[paginationDebut:paginationFin]:
-        strLinkCount = "0"+str(index) if len(str(index)) == 1 else str(index)
-        link['numero'] = strLinkCount
-        options.append(Choice(name=str(link['libelle']), value=str(strLinkCount)))
-        index += 1
-
-    if paginationPrecedente == True:
-        options.append(Choice(name="-- Page précédente --", value="--"))
-
-    if paginationSuivante == True:
-        options.append(Choice(name='++ Page suivante ++', value="++"))
-
-    options.append(Choice(name="** Voir l'historique **", value="**"))
-
-    questions = [
-        {
-            "type": "fuzzy",
-            "message": "Votre choix:",
-            "choices": options,
-            "match_exact": True,
-            "info": False,
-            "border": True,
-            "prompt": "->"
-        }
-    ]
-    result = prompt(questions)
-
-    linkChoice = result[0]
-    
-    # traitement de l'input
-
-    if linkChoice == "++":
-        if paginationSuivante == True:
-            afficherMessage('Page suivante !')
-            paginationDebut += 20
-            paginationFin += 20
-            paginationPrecedente = True
-            pageAffichee += 1
-
-            # si on attend la dernière page
-            if pageAffichee == ceil(nbPagesPagination):
-                paginationSuivante = False
-        else:
-            afficherMessage("Il n'y a pas d'autre choix !")
-
-        index = index = paginationDebut + 1
-
-    elif linkChoice == "--":
-        if paginationPrecedente == True:
-            afficherMessage('Page précédente !')
-            paginationDebut = paginationDebut - 20
-            paginationFin = paginationFin - 20
-            paginationSuivante = True
-            pageAffichee = pageAffichee - 1
-
-            # si on arrive sur la première page
-            if pageAffichee == 1:
-                paginationPrecedente = False
-        else:
-            afficherMessage("Vous êtes déjà sur la première page")
-        
-        index = paginationDebut + 1
-
-    elif linkChoice == "**":
-        afficherHistorique()
-
-    elif len(linkChoice) > 2:
-        afficherMessage("Entrée incorrecte")
-        index = paginationDebut + 1
-
-    else:
-        result = False
-
-        # recherche de l'élément de la liste ayant le numéro entré par le joueur
+        # ajout dans l'objet du lien son numéro dans la liste
         for link in liensPageActuelle[paginationDebut:paginationFin]:
-            if linkChoice == link['numero']:
-                print("Vous avez choisi " + link["lien"])
-                print("Chargement en cours ...")
-                nouvellePage = getInfosPage(lienWikipedia + link["lien"])
+            strLinkCount = "0"+str(index) if len(str(index)) == 1 else str(index)
+            link['numero'] = strLinkCount
+            options.append(Choice(name=str(link['libelle']), value=str(strLinkCount)))
+            index += 1
 
-                # si la prochaine page ne contient aucun lien on reste sur la page actuelle
-                if len(nouvellePage['links']) == 0:
-                    afficherMessage('La page choisie ne contient aucun lien !')
-                    result = True
-                    index = paginationDebut + 1
-                    break
-                else:
-                    changementDePage(nouvellePage)
-                    historique.append({"title": nouvellePage['title'], 'links': nouvellePage['links']})
-                    result = True
-                    break
+        if paginationPrecedente == True:
+            options.append(Choice(name="-- Page précédente --", value="--"))
+
+        if paginationSuivante == True:
+            options.append(Choice(name='++ Page suivante ++', value="++"))
+
+        options.append(Choice(name="** Voir l'historique **", value="**"))
+
+        questions = [
+            {
+                "type": "fuzzy",
+                "message": "Votre choix:",
+                "choices": options,
+                "match_exact": True,
+                "info": False,
+                "border": True,
+                "prompt": "->"
+            }
+        ]
+        result = prompt(questions)
+
+        linkChoice = result[0]
         
-        # si aucune correspondance dans la liste
-        if result == False:
-            afficherMessage("Saisie incorrect !")
+        # traitement de l'input
+
+        if linkChoice == "++":
+            if paginationSuivante == True:
+                afficherMessage('Page suivante !')
+                paginationDebut += 20
+                paginationFin += 20
+                paginationPrecedente = True
+                pageAffichee += 1
+
+                # si on attend la dernière page
+                if pageAffichee == ceil(nbPagesPagination):
+                    paginationSuivante = False
+            else:
+                afficherMessage("Il n'y a pas d'autre choix !")
+
+            index = index = paginationDebut + 1
+
+        elif linkChoice == "--":
+            if paginationPrecedente == True:
+                afficherMessage('Page précédente !')
+                paginationDebut = paginationDebut - 20
+                paginationFin = paginationFin - 20
+                paginationSuivante = True
+                pageAffichee = pageAffichee - 1
+
+                # si on arrive sur la première page
+                if pageAffichee == 1:
+                    paginationPrecedente = False
+            else:
+                afficherMessage("Vous êtes déjà sur la première page")
+            
             index = paginationDebut + 1
 
-# message de victoire
-phrase = "Vous avez gagné en " + str(numTour - 1)
-print( phrase + " coup" if numTour - 1 == 1 else phrase + " coups")  
+        elif linkChoice == "**":
+            afficherHistorique()
+
+        elif len(linkChoice) > 2:
+            afficherMessage("Entrée incorrecte")
+            index = paginationDebut + 1
+
+        else:
+            result = False
+
+            # recherche de l'élément de la liste ayant le numéro entré par le joueur
+            for link in liensPageActuelle[paginationDebut:paginationFin]:
+                if linkChoice == link['numero']:
+                    print("Vous avez choisi " + link["lien"])
+                    print("Chargement en cours ...")
+                    nouvellePage = getInfosPage(lienWikipedia + link["lien"])
+
+                    # si la prochaine page ne contient aucun lien on reste sur la page actuelle
+                    if len(nouvellePage['links']) == 0:
+                        afficherMessage('La page choisie ne contient aucun lien !')
+                        result = True
+                        index = paginationDebut + 1
+                        break
+                    else:
+                        changementDePage(nouvellePage)
+                        historique.append({"title": nouvellePage['title'], 'links': nouvellePage['links']})
+                        result = True
+                        break
+            
+            # si aucune correspondance dans la liste
+            if result == False:
+                afficherMessage("Saisie incorrect !")
+                index = paginationDebut + 1
+
+    # message de victoire
+    phrase = "Vous avez gagné en " + str(numTour - 1)
+    print( phrase + " coup" if numTour - 1 == 1 else phrase + " coups")  
+else:
+    if sys.argv[1] == "-n":
+
+        print("Chargement ...")
+
+        # création de la graine
+        urlPageDepart = ""
+        pageDepart = getInfosPage(lienPageRandom, 0, 1)
+
+        urlPageCible = ""
+        titrePageCible = getInfosPage(lienPageRandom, 1)
+
+        clear()
+        print("*"*19)
+        print("**** Your seed ****")
+        print(urlPageDepart + "#" + urlPageCible)
+        print("*"*19)
