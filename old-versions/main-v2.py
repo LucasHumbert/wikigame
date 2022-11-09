@@ -200,6 +200,11 @@ while titrePageActuelle != titrePageCible:
                     changementDePage(nouvellePage)
                     result = True
                     break
+        
+        # si aucune correspondance dans la liste
+        if result == False:
+            afficherMessage("Saisie incorrect !")
+            index = paginationDebut + 1
 
 # message de victoire
 phrase = "Vous avez gagné en " + str(numTour - 1)

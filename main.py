@@ -4,6 +4,7 @@ from math import *
 from InquirerPy import prompt
 from InquirerPy.base.control import Choice
 import os
+import time
 
 # commande permettant de clear la console
 clear = lambda: os.system('cls')
@@ -28,7 +29,7 @@ def getInfosPage(lien, cible = 0):
         for para in soup.find_all('p'):
             #récupérer tout les liens dans les paragraphes
             for link in para.find_all('a'):
-                if (link.text != "" and link.text[0] != "["):
+                if (link.text != "" and link.text[0] != "[" and len(link['href']) > 0):
                     result = any(ele in link['href'] for ele in badLinks)
                     if result == False:
                         links.append({'libelle': link.text, 'lien': link['href']})
@@ -80,6 +81,67 @@ def pagination():
     global index
     index = paginationDebut + 1
 
+def afficherHistorique():
+    clear()
+
+    if len(historique) == 0:
+        print("Historique vide ! Retour au jeu")
+        time.sleep(1.5)
+        clear()
+    else: 
+        print("*** Historique ***")
+        print()
+
+        histo = titrePageDepart
+        for el in historique:
+            histo += " => " + el['title']
+        histo += " => ..."
+        print(histo)
+        print()
+        print("Cible: " + titrePageCible)
+        print()
+
+        questions = [        {
+                "type": "confirm",
+                "message": "Voulez vous revenir en arrière ? (Votre nombre de coups ne diminuera pas !)"
+            }
+        ]
+
+        result = prompt(questions)
+
+        if result[0] == True:
+            revenirEnArriere()
+        else:
+            print("Retour au jeu")
+            time.sleep(1.5)
+            clear()
+
+def revenirEnArriere():
+    print()
+    print('*** Revenir en arrière ***')
+    print()
+    options = []
+
+    options.append(Choice(name=titrePageDepart, value=pageDepart))
+
+    for el in historique:
+        options.append(Choice(name=el['title'], value=el))
+
+    questions = [
+        {
+            "type": "fuzzy",
+            "message": "Votre choix:",
+            "choices": options,
+            "match_exact": True,
+            "info": False,
+            "border": True,
+            "prompt": "->"
+        }
+    ]
+    result = prompt(questions)
+
+    changementDePage(result[0])  
+    historique.append({"title": result[0]['title'], 'links': result[0]['links']})  
 
 
 #numéro du tour actuel
@@ -97,6 +159,8 @@ titrePageActuelle = titrePageDepart
 liensPageActuelle = pageDepart['links']
 nbLiensPageActuelle = len(pageDepart['links'])
 
+# stockage de l'historique des pages utilisées
+historique = []
 
 pagination()
 clear()
@@ -109,7 +173,6 @@ while titrePageActuelle != titrePageCible:
     print("Cible: " + titrePageCible)
     print("Actuellement: " + titrePageActuelle)
     print("-"*6 + " Page " + str(pageAffichee) + "-"*6)
-
 
     # options correspond aux liens hypertextes
     options = []
@@ -126,6 +189,8 @@ while titrePageActuelle != titrePageCible:
 
     if paginationSuivante == True:
         options.append(Choice(name='++ Page suivante ++', value="++"))
+
+    options.append(Choice(name="** Voir l'historique **", value="**"))
 
     questions = [
         {
@@ -176,6 +241,9 @@ while titrePageActuelle != titrePageCible:
         
         index = paginationDebut + 1
 
+    elif linkChoice == "**":
+        afficherHistorique()
+
     elif len(linkChoice) > 2:
         afficherMessage("Entrée incorrecte")
         index = paginationDebut + 1
@@ -198,6 +266,7 @@ while titrePageActuelle != titrePageCible:
                     break
                 else:
                     changementDePage(nouvellePage)
+                    historique.append({"title": nouvellePage['title'], 'links': nouvellePage['links']})
                     result = True
                     break
         
