@@ -6,6 +6,7 @@ from InquirerPy.base.control import Choice
 import os
 import time
 import sys
+import base64
 
 # commande permettant de clear la console
 clear = lambda: os.system('cls')
@@ -310,8 +311,31 @@ else:
         urlPageCible = ""
         titrePageCible = getInfosPage(lienPageRandom, 1)
 
+        seed = urlPageDepart[len(lienWikipedia):] + "#" + urlPageCible[len(lienWikipedia):]
+
+        seed_bytes = seed.encode('ascii')
+        base64_bytes = base64.b64encode(seed_bytes)
+        base64_seed = base64_bytes.decode('ascii')
+
         clear()
-        print("*"*19)
-        print("**** Your seed ****")
-        print(urlPageDepart + "#" + urlPageCible)
-        print("*"*19)
+        stars = int((len(base64_seed)/2)-11)
+        print("*"*len(base64_seed))
+        print("*"*stars + " Your seed is ready ! " + "*"*stars)
+        print(base64_seed)
+        print("*"*len(base64_seed))
+
+    elif sys.argv[1] == "-s":
+        if len(sys.argv) == 3:
+
+            try:
+                base64_message = sys.argv[2]
+                base64_bytes = base64_message.encode('ascii')
+                message_bytes = base64.b64decode(base64_bytes)
+                message = message_bytes.decode('ascii')
+            except:
+                print("Seed inccorect")
+            else:
+                print("Lancer le jeu")
+
+        else:
+            print("Paramètres invalides")
