@@ -22,6 +22,17 @@ Pour lancer les anciennes versions:
 python old-versions/main-v*.py
 ```
 
+###Créer une seed
+
+Pour créer la seed
+```
+python main.js -n
+```
+
+Pour jouer avec cette seed (pas encore fonctionnel)
+```
+python main.js -s *seed*
+```
 
 ## Règles du jeu
 
